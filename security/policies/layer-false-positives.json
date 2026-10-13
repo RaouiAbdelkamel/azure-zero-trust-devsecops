@@ -11,6 +11,50 @@
       "justification": "The official Docker Python image embeds the upstream public GPG verification key used to validate the Python source tarball signature. This key is public and is required for cryptographic provenance; it is not a private secret or credential.",
       "compensating_control": "Only the exact official public key fingerprint in the image config is approved; every other secret-like finding remains blocked by the layer scan gate.",
       "expires": "2026-11-12"
+    },
+    {
+      "id": "python311-msvccompiler-registry-api-symbol",
+      "owner": "cloud-security",
+      "rule": "generic-api-key",
+      "suffix": "usr/local/lib/python3.11/distutils/msvccompiler.py",
+      "lines": [39],
+      "file_sha256": "4dae9b283df0b4606089d2e442c1f12932a106665701a69fbab64c1ef3181513",
+      "justification": "This finding is the RegEnumKey Windows registry API symbol in the official Python 3.11 distutils compatibility module. It is source-code API naming, not a credential or key value.",
+      "compensating_control": "Approval is bound to the exact upstream source file hash, line, Gitleaks rule, and path; any changed file or additional finding remains blocked.",
+      "expires": "2026-11-12"
+    },
+    {
+      "id": "cryptography-hpke-private-key-type-annotations",
+      "owner": "cloud-security",
+      "rule": "generic-api-key",
+      "suffix": "cryptography/hazmat/bindings/_rust/openssl/hpke.pyi",
+      "lines": [77, 101],
+      "file_sha256": "a7f8462e7e981fe11aac91755796d4b14b638a9be2100a5c4793b4b141c92ed7",
+      "justification": "Both findings are the private_key parameter and X25519PrivateKey type in cryptography's public HPKE typing stub. They name API parameters and types and contain no key material.",
+      "compensating_control": "Approval is bound to the exact locked-package stub hash, listed lines, Gitleaks rule, and path; any changed file or additional finding remains blocked.",
+      "expires": "2026-11-12"
+    },
+    {
+      "id": "pyjwt-private-key-api-identifiers",
+      "owner": "cloud-security",
+      "rule": "generic-api-key",
+      "suffix": "site-packages/jwt/algorithms.py",
+      "lines": [97, 984, 1107],
+      "file_sha256": "31e174916a77d17f4ed9dbcd3b869e9264a146aaf8d97f02d9b43bf828fe0441",
+      "justification": "The findings are the public PyJWT algorithms module's private-key class names and key parameter/type annotations. They are Python identifiers and contain no cryptographic key bytes.",
+      "compensating_control": "Approval is bound to the exact PyJWT 2.15.1 source file hash, listed lines, Gitleaks rule, and path; any changed file or additional finding remains blocked.",
+      "expires": "2026-11-12"
+    },
+    {
+      "id": "pyjwt-metadata-documentation-token-example",
+      "owner": "cloud-security",
+      "rule": "jwt",
+      "suffix": "pyjwt-2.15.1.dist-info/METADATA",
+      "lines": [77],
+      "file_sha256": "1ea0c9f139b8c928276b3628af165955f6f764491448a6ad8f103cdcbb382da3",
+      "justification": "This is a fixed HS256 documentation/example token embedded in the public METADATA for the exactly locked PyJWT 2.15.1 distribution; its sole claim is the non-sensitive placeholder name 'some'. It is not an application or service credential.",
+      "compensating_control": "Approval is bound to the exact locked-package metadata hash, line, Gitleaks rule, and path; any changed file or additional token remains blocked.",
+      "expires": "2026-11-12"
     }
   ]
 }
