@@ -20,7 +20,12 @@ def graph(layout, descriptor, visited=None):
     require(path.is_file() and digest_file(path) == digest, "OCI blob digest mismatch")
     require(path.stat().st_size == descriptor["size"], "OCI blob size mismatch")
     media = descriptor["mediaType"]
-    if media.endswith("+json"):
+    if media in {
+        "application/vnd.oci.image.index.v1+json",
+        "application/vnd.oci.image.manifest.v1+json",
+        "application/vnd.docker.distribution.manifest.list.v2+json",
+        "application/vnd.docker.distribution.manifest.v2+json",
+    }:
         value = read_json(path)
         for child in value.get("manifests", []) + value.get("layers", []):
             graph(layout, child, visited)

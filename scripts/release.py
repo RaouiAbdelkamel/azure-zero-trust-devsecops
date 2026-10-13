@@ -61,6 +61,14 @@ def source(run_id):
     anchors = re.findall(r"RELEASE_ANCHOR (\{[^\r\n]*\})", log)
     require(len(anchors) == 1, "Missing signing artifact anchor")
     anchor = json.loads(anchors[0])
+    require(
+        anchor["commit"] == commit
+        and anchor["repository"] == repository
+        and re.fullmatch(r"[0-9a-f]{64}", anchor["sha256"])
+        and isinstance(anchor["id"], int)
+        and anchor["id"] > 0,
+        "Invalid signing artifact anchor",
+    )
     artifact = api(f"repos/{repository}/actions/artifacts/{anchor['id']}")
     require(
         artifact["workflow_run"]["id"] == int(run_id)
