@@ -22,6 +22,6 @@ Le build multi-stage conserve l'utilisateur 10001:10001. La CI charge l'export D
 
 ## E. SBOM et traçabilité
 
-Syft produit `out/sbom.cdx.json` et `out/sbom.spdx.json` depuis l'image OCI construite. Les schémas et la présence de composants sont contrôlés. `build.json` lie commit, dépôt, run, manifestes et configuration. `provenance.buildkit.json` doit désigner le manifeste de plateforme. `qualification.json` et `bundle.json` lient les contrôles et hashes. Ces fichiers ne sont conservés comme candidat que lorsque toutes les étapes obligatoires ont réussi.
+Syft produit `out/sbom.cdx.json` et `out/sbom.spdx.json` depuis l'image OCI construite. Les marqueurs de format et la présence de composants sont contrôlés ; ce contrôle ne remplace pas une validation exhaustive des schémas officiels. `build.json` lie commit, dépôt, run, manifestes, configuration et hashes des preuves. `provenance.buildkit.json` doit désigner le manifeste de plateforme. `qualification.json` contient les contrôles terminés. Ces fichiers ne sont conservés comme candidat que lorsque toutes les étapes obligatoires ont réussi.
 
 La signature des preuves ajoute une liaison cryptographique au digest image dans ACR. Un SBOM seul n'atteste ni l'innocuité ni l'origine d'un composant ; l'analyse des vulnérabilités et la revue des mises à jour restent nécessaires.

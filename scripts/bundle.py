@@ -56,14 +56,20 @@ def prepare(directory, commit, repository):
         index_bytes = (layout / "blobs/sha256" / existing["digest"].split(":")[1]).read_bytes()
         index = json.loads(index_bytes)
     digest = "sha256:" + hashlib.sha256(index_bytes).hexdigest()
-    (layout / "blobs/sha256" / digest.split(":")[1]).write_bytes(index_bytes)
+    root_blob = layout / "blobs/sha256" / digest.split(":")[1]
+    if root_blob.exists():
+        require(digest_file(root_blob) == digest, "Existing OCI root blob mismatch")
+    else:
+        root_blob.write_bytes(index_bytes)
     descriptor = {
         "mediaType": "application/vnd.oci.image.index.v1+json",
         "digest": digest,
         "size": len(index_bytes),
         "annotations": {"org.opencontainers.image.ref.name": "ci"},
     }
-    (layout / "index.json").write_text(json.dumps({"schemaVersion": 2, "manifests": [descriptor]}))
+    wrapper = layout / "index.prepared.json"
+    wrapper.write_text(json.dumps({"schemaVersion": 2, "manifests": [descriptor]}))
+    wrapper.replace(layout / "index.json")
     graph(layout, descriptor)
     platforms = [
         entry
