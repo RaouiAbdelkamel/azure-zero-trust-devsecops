@@ -33,7 +33,11 @@ def digest_file(path):
 def redact(value):
     if isinstance(value, dict):
         return {
-            key: "<redacted>"
+            key: (
+                {"text": "<redacted>"}
+                if key.lower() == "snippet" and isinstance(item, dict)
+                else "<redacted>"
+            )
             if key.lower() in {"match", "secret", "code", "snippet", "content"}
             else redact(item)
             for key, item in value.items()

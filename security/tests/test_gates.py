@@ -8,6 +8,10 @@ import pytest
 import yaml
 
 
+def test_sarif_redaction_preserves_snippet_object():
+    assert policy.redact({"snippet": {"text": "sensitive fixture"}}) == {"snippet": {"text": "<redacted>"}}
+
+
 def write(path, value):
     path.write_text(json.dumps(value), encoding="utf-8")
     return path

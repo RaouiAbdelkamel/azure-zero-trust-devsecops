@@ -35,7 +35,7 @@ jobs:
           cache-binary: false
           buildkitd-flags: '--oci-worker-snapshotter=overlayfs'
           driver-opts: image=moby/buildkit@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea
-      - name: Build once, export OCI and Docker layouts
+      - name: Build once with mandatory OCI provenance
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: app
@@ -50,10 +50,10 @@ jobs:
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           outputs: |
             type=oci,dest=out/image-layout,tar=false
-            type=docker,dest=${{ runner.temp }}/runtime.docker.tar
       - name: Bind OCI graph to source and qualify same config
         run: |
           python scripts/bundle.py prepare out
+          python scripts/bundle.py runtime-export out --output "$RUNNER_TEMP/runtime.docker.tar"
           docker load -i "$RUNNER_TEMP/runtime.docker.tar"
           config_digest="$(python -c 'import json; print(json.load(open("out/build.json"))["config_digest"])')"
           bash scripts/validate-docker-runtime.sh secure-fastapi:ci "$config_digest"
