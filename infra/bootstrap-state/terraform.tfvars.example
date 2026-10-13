@@ -1,0 +1,6 @@
+subscription_id                   = "00000000-0000-0000-0000-000000000000"
+tenant_id                         = "00000000-0000-0000-0000-000000000000"
+storage_account_name              = "tfstateztproda1b2c3d4"
+existing_hub_endpoint_subnet_id    = "/subscriptions/SUB/resourceGroups/HUB/providers/Microsoft.Network/virtualNetworks/HUB/subnets/ENDPOINTS"
+existing_blob_private_dns_zone_id  = "/subscriptions/SUB/resourceGroups/DNS/providers/Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net"
+state_principal_ids               = ["00000000-0000-0000-0000-000000000000"]

@@ -1,0 +1,14 @@
+variable "prefix" { type = string }
+variable "resource_group_name" { type = string }
+variable "resource_group_id" { type = string }
+variable "location" { type = string }
+variable "github_repository" { type = string }
+variable "github_build_environment" { type = string }
+variable "github_sign_environment" { type = string }
+variable "aks_oidc_issuer_url" { type = string }
+variable "workload_namespace" { type = string }
+variable "ratify_namespace" { type = string }
+variable "ratify_service_account" { type = string }
+variable "acr_id" { type = string }
+variable "signing_vault_id" { type = string }
+variable "tags" { type = map(string) }

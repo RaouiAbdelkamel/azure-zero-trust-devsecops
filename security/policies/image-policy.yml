@@ -1,0 +1,13 @@
+version: 1
+platform: linux/amd64
+repository: secure-api
+run_as_user: 10001
+run_as_group: 10001
+port: 8080
+require_digest: true
+require_sbom: [CycloneDX, SPDX]
+require_runtime_security: true
+require_provenance: true
+require_notation_image_signature: true
+require_notation_evidence_signature: true
+rebuild_before_promotion: false

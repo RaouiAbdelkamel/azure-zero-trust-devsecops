@@ -1,0 +1,4 @@
+# Copier vers backend.tf APRÈS le bootstrap et migrer l'état existant.
+terraform {
+  backend "azurerm" {}
+}

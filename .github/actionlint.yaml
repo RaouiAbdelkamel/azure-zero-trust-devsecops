@@ -1,0 +1,2 @@
+self-hosted-runner:
+  labels: [azure-private, ephemeral, publish, sign, verify]

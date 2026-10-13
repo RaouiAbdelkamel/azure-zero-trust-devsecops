@@ -1,0 +1,6 @@
+version: 1
+# Les exceptions ne sont pas implicitement utilisées comme un fichier Trivy ignore.
+# Chaque exception doit être revue et ses dates validées avant application.
+required_fields: [id, package, justification, owner, expires, compensating_control]
+max_duration_days: 30
+exceptions: []

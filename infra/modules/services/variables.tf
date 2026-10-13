@@ -1,0 +1,9 @@
+variable "prefix" { type = string }
+variable "unique_suffix" { type = string }
+variable "resource_group_name" { type = string }
+variable "location" { type = string }
+variable "tenant_id" { type = string }
+variable "endpoint_subnet_id" { type = string }
+variable "acr_dns_zone_id" { type = string }
+variable "vault_dns_zone_id" { type = string }
+variable "tags" { type = map(string) }

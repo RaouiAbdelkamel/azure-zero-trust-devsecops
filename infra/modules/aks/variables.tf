@@ -1,0 +1,17 @@
+variable "prefix" { type = string }
+variable "resource_group_name" { type = string }
+variable "resource_group_id" { type = string }
+variable "location" { type = string }
+variable "tenant_id" { type = string }
+variable "kubernetes_version" { type = string }
+variable "security_admin_group_object_id" { type = string }
+variable "system_subnet_id" { type = string }
+variable "user_subnet_id" { type = string }
+variable "vnet_id" { type = string }
+variable "route_table_id" { type = string }
+variable "aks_nsg_id" { type = string }
+variable "private_dns_zone_id" { type = string }
+variable "acr_id" { type = string }
+variable "system_vm_size" { type = string }
+variable "user_vm_size" { type = string }
+variable "tags" { type = map(string) }

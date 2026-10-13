@@ -1,0 +1,141 @@
+"""OCI graph integrity, immutable build identity, evidence hashes; no image rebuilding."""
+
+import argparse
+import json
+import os
+import sys
+from pathlib import Path
+
+from policy import COMMIT, SHA, digest_file, read_json, require, sbom_gate
+
+
+def graph(layout, descriptor, visited=None):
+    visited = visited or set()
+    digest = descriptor["digest"]
+    require(SHA.fullmatch(digest), "Invalid OCI digest")
+    if digest in visited:
+        return
+    visited.add(digest)
+    path = layout / "blobs/sha256" / digest.split(":")[1]
+    require(path.is_file() and digest_file(path) == digest, "OCI blob digest mismatch")
+    require(path.stat().st_size == descriptor["size"], "OCI blob size mismatch")
+    media = descriptor["mediaType"]
+    if media.endswith("+json"):
+        value = read_json(path)
+        for child in value.get("manifests", []) + value.get("layers", []):
+            graph(layout, child, visited)
+        if "config" in value:
+            graph(layout, value["config"], visited)
+
+
+def prepare(directory, commit, repository):
+    require(COMMIT.fullmatch(commit), "Invalid source commit")
+    layout = directory / "image-layout"
+    # Save the unmodified BuildKit index as a content-addressed blob. Local wrapper
+    # adds a deterministic name for ORAS; registry content digest stays unchanged.
+    index_bytes = (layout / "index.json").read_bytes()
+    import hashlib
+
+    digest = "sha256:" + hashlib.sha256(index_bytes).hexdigest()
+    index = json.loads(index_bytes)
+    (layout / "blobs/sha256" / digest.split(":")[1]).write_bytes(index_bytes)
+    descriptor = {
+        "mediaType": "application/vnd.oci.image.index.v1+json",
+        "digest": digest,
+        "size": len(index_bytes),
+        "annotations": {"org.opencontainers.image.ref.name": "ci"},
+    }
+    (layout / "index.json").write_text(json.dumps({"schemaVersion": 2, "manifests": [descriptor]}))
+    graph(layout, descriptor)
+    platforms = [
+        entry
+        for entry in index["manifests"]
+        if entry.get("platform") == {"architecture": "amd64", "os": "linux"}
+    ]
+    require(len(platforms) == 1, "Expected one Linux amd64 image")
+    image = read_json(layout / "blobs/sha256" / platforms[0]["digest"].split(":")[1])
+    attestations = []
+    for entry in index["manifests"]:
+        if entry.get("annotations", {}).get("vnd.docker.reference.type") == "attestation-manifest":
+            manifest = read_json(layout / "blobs/sha256" / entry["digest"].split(":")[1])
+            for layer in manifest["layers"]:
+                statement = read_json(layout / "blobs/sha256" / layer["digest"].split(":")[1])
+                if statement.get("predicateType", "").startswith("https://slsa.dev/provenance/"):
+                    require(
+                        any(
+                            s.get("digest", {}).get("sha256") == platforms[0]["digest"].split(":")[1]
+                            for s in statement["subject"]
+                        ),
+                        "Provenance subject mismatch",
+                    )
+                    attestations.append(statement)
+    require(len(attestations) == 1, "BuildKit provenance is mandatory")
+    (directory / "provenance.buildkit.json").write_text(json.dumps(attestations[0], indent=2) + "\n")
+    metadata = {
+        "version": "1.0.0",
+        "commit": commit,
+        "repository": repository,
+        "digest": digest,
+        "platform_manifest": platforms[0]["digest"],
+        "config_digest": image["config"]["digest"],
+        "workflow": ".github/workflows/ci-security.yml",
+        "run_id": os.environ.get("GITHUB_RUN_ID", "local"),
+        "files": {},
+    }
+    (directory / "build.json").write_text(json.dumps(metadata, indent=2) + "\n")
+    print(digest)
+
+
+def seal(directory):
+    sbom_gate(directory / "sbom.cdx.json", directory / "sbom.spdx.json")
+    record = read_json(directory / "build.json")
+    record["files"] = {
+        name: digest_file(directory / name)
+        for name in ("sbom.cdx.json", "sbom.spdx.json", "provenance.buildkit.json", "qualification.json")
+    }
+    (directory / "build.json").write_text(json.dumps(record, indent=2) + "\n")
+
+
+def verify(directory, commit):
+    record = read_json(directory / "build.json")
+    require(record["commit"] == commit and COMMIT.fullmatch(commit), "Source commit mismatch")
+    require(SHA.fullmatch(record["digest"]), "Invalid registry digest")
+    index = read_json(directory / "image-layout/index.json")
+    require(
+        len(index["manifests"]) == 1 and index["manifests"][0]["digest"] == record["digest"],
+        "OCI index substitution",
+    )
+    graph(directory / "image-layout", index["manifests"][0])
+    require(
+        set(record["files"])
+        == {"sbom.cdx.json", "sbom.spdx.json", "provenance.buildkit.json", "qualification.json"},
+        "Missing mandatory build evidence",
+    )
+    for name, digest in record["files"].items():
+        require(digest_file(directory / name) == digest, "Evidence integrity mismatch")
+    qualification = read_json(directory / "qualification.json")
+    require(
+        all(qualification.get(name) is True for name in ("runtime", "image_scan", "layers_secrets", "sbom")),
+        "Incomplete qualification",
+    )
+    sbom_gate(directory / "sbom.cdx.json", directory / "sbom.spdx.json")
+    return record
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("command", choices=["prepare", "seal", "verify"])
+    parser.add_argument("directory", type=Path)
+    parser.add_argument("--commit", default=os.environ.get("GITHUB_SHA", ""))
+    parser.add_argument("--repository", default=os.environ.get("GITHUB_REPOSITORY", ""))
+    args = parser.parse_args()
+    try:
+        if args.command == "prepare":
+            prepare(args.directory, args.commit, args.repository)
+        elif args.command == "seal":
+            seal(args.directory)
+        else:
+            print(json.dumps(verify(args.directory, args.commit)))
+    except (ValueError, KeyError, OSError) as error:
+        print(f"BLOCK: {error}", file=sys.stderr)
+        sys.exit(1)

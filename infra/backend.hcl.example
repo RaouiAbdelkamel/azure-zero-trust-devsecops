@@ -1,0 +1,6 @@
+resource_group_name  = "rg-tfstate-prod"
+storage_account_name = "REPLACE_WITH_BOOTSTRAP_OUTPUT"
+container_name       = "tfstate"
+key                  = "zero-trust/production.tfstate"
+use_azuread_auth     = true
+# OIDC CI : ARM_USE_OIDC=true ; local : session az login, sans clé de compte.

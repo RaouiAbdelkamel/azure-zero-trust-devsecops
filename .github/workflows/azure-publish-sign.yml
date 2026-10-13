@@ -1,0 +1,152 @@
+name: Azure Publish and Sign
+on:
+  workflow_dispatch:
+    inputs:
+      ci_run_id:
+        description: Successful main push run of CI Security, for this exact commit
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: azure-publication-main
+  cancel-in-progress: false
+defaults:
+  run:
+    shell: bash
+jobs:
+  preflight:
+    name: Reject unqualified Azure or source configuration
+    if: github.ref == 'refs/heads/main' && github.repository == 'RaouiAbdelkamel/azure-zero-trust-devsecops'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      artifact_id: ${{ steps.source.outputs.artifact_id }}
+      artifact_sha: ${{ steps.source.outputs.artifact_sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configuration must be enabled and trust material approved
+        env:
+          AZURE_RELEASE_ENABLED: ${{ vars.AZURE_RELEASE_ENABLED }}
+        run: |
+          test "$AZURE_RELEASE_ENABLED" = true
+          python scripts/policy.py azure
+      - name: Require protected reviewer environments
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/github-evidence.py environments
+      - name: Authenticate original successful CI artifact identity
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ inputs.ci_run_id }}
+        run: python scripts/github-evidence.py source "$SOURCE_RUN_ID"
+  publish:
+    name: Publish same qualified OCI graph
+    needs: preflight
+    runs-on: [self-hosted, linux, x64, azure-private, ephemeral, publish]
+    environment: build-production
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    outputs:
+      digest: ${{ steps.publish.outputs.digest }}
+      reference: ${{ steps.publish.outputs.reference }}
+    env:
+      CI_ROLE: build
+      AZURE_LOGIN_POST_CLEANUP: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Only trusted tooling, no application execution
+        run: |
+          bash scripts/init-release-context.sh
+          python scripts/install-tools.py oras
+          python scripts/azure-config-env.py
+      - name: Download original candidate by immutable ID and verify ZIP digest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_ID: ${{ needs.preflight.outputs.artifact_id }}
+          CANDIDATE_SHA: ${{ needs.preflight.outputs.artifact_sha }}
+        run: |
+          python scripts/github-evidence.py download "$CANDIDATE_ID" "$CANDIDATE_SHA" out
+          python scripts/bundle.py verify out
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ env.AZURE_SELECTED_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TARGET_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_TARGET_SUBSCRIPTION_ID }}
+          audience: api://AzureADTokenExchange
+      - name: Private DNS, TLS and actual registry configuration
+        run: bash scripts/check-azure-readiness.sh
+      - name: Publish verified bytes, never rebuild
+        id: publish
+        run: bash scripts/publish-candidate.sh
+      - name: Remove ephemeral registry credential file
+        if: always()
+        run: python -c 'import os,pathlib; pathlib.Path(os.environ["DOCKER_CONFIG"],"config.json").unlink(missing_ok=True)'
+  sign:
+    name: Sign image and provenance evidence
+    needs: [preflight, publish]
+    runs-on: [self-hosted, linux, x64, azure-private, ephemeral, sign]
+    environment: sign-production
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    env:
+      CI_ROLE: sign
+      AZURE_LOGIN_POST_CLEANUP: 'true'
+      IMAGE_DIGEST: ${{ needs.publish.outputs.digest }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: |
+          bash scripts/init-release-context.sh
+          python scripts/install-tools.py oras notation azure-kv
+          python scripts/azure-config-env.py
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_ID: ${{ needs.preflight.outputs.artifact_id }}
+          CANDIDATE_SHA: ${{ needs.preflight.outputs.artifact_sha }}
+        run: python scripts/github-evidence.py download "$CANDIDATE_ID" "$CANDIDATE_SHA" out
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ env.AZURE_SELECTED_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TARGET_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_TARGET_SUBSCRIPTION_ID }}
+          audience: api://AzureADTokenExchange
+      - run: bash scripts/check-azure-readiness.sh
+      - name: Remote HSM signing and strict verification
+        id: sign
+        run: bash scripts/sign-candidate.sh
+      - name: Record candidate verification metadata
+        env:
+          EVIDENCE_DIGEST: ${{ steps.sign.outputs.evidence_digest }}
+          IMAGE_REFERENCE: ${{ needs.publish.outputs.reference }}
+        run: |
+          python scripts/release.py candidate out/build.json .reports/release-candidate.json
+      - id: signedcandidate
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: signed-candidate-${{ github.sha }}
+          path: .reports/release-candidate.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Anchor signed candidate identity
+        env:
+          ARTIFACT_ID: ${{ steps.signedcandidate.outputs.artifact-id }}
+          ARTIFACT_SHA: ${{ steps.signedcandidate.outputs.artifact-digest }}
+        run: python scripts/github-evidence.py anchor
+      - if: always()
+        run: python -c 'import os,pathlib; pathlib.Path(os.environ["DOCKER_CONFIG"],"config.json").unlink(missing_ok=True)'

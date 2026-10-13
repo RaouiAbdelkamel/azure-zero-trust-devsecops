@@ -1,0 +1,22 @@
+{
+  "enabled": false,
+  "repository": "RaouiAbdelkamel/azure-zero-trust-devsecops",
+  "branch": "main",
+  "registry": "",
+  "image_repository": "secure-api",
+  "subscription_id": "",
+  "tenant_id": "",
+  "build_client_id": "",
+  "sign_client_id": "",
+  "verify_client_id": "",
+  "certificate_name": "",
+  "signing_vault": "",
+  "key_id": "",
+  "trusted_subject": "",
+  "root_certificate_sha256": "",
+  "root_certificate": "security/notation/certificates/root.pem",
+  "ca_bundle": "security/notation/certificates/ca-bundle.pem",
+  "build_environment": "build-production",
+  "sign_environment": "sign-production",
+  "release_environment": "release-production"
+}

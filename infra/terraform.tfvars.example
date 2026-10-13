@@ -1,0 +1,11 @@
+subscription_id                = "00000000-0000-0000-0000-000000000000"
+tenant_id                      = "00000000-0000-0000-0000-000000000000"
+security_admin_group_object_id = "00000000-0000-0000-0000-000000000000"
+prefix                         = "ztprod"
+unique_suffix                  = "a1b2c3d4"
+location                       = "westeurope"
+# Remplacer par une version GA retournée par az aks get-versions dans votre région.
+kubernetes_version       = "REPLACE_WITH_SUPPORTED_GA_VERSION"
+github_repository        = "votre-organisation/votre-depot"
+github_build_environment = "build-production"
+github_sign_environment  = "sign-production"

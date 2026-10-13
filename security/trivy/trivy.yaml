@@ -1,0 +1,9 @@
+scan:
+  skip-dirs: [app/.venv, app/reports, app/tools, .tools, .ci-venv, .reports, out, infra/.terraform]
+vulnerability:
+  ignore-unfixed: false
+secret:
+  # Gitleaks couvre aussi les couches séparées et l'historique Git accessible.
+  config: ""
+exit-code: 0
+# Le script analyse ensuite le rapport JSON : HIGH/CRITICAL et misconfigs/secret -> BLOCK.

@@ -1,0 +1,12 @@
+[tool.ruff]
+target-version = "py311"
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/refresh-tool-lock.py" = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["security/tests"]

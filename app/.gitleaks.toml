@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Generated environments, tool binaries and validation reports only"
+paths = ['''(^|[/\\])(\.venv|reports|tools|__pycache__|\.pytest_cache|\.ruff_cache)([/\\]|$)''']

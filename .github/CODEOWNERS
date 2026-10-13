@@ -1,0 +1,8 @@
+# Owner actuel du dépôt. Ajouter une équipe indépendante disposant de write avant production.
+* @RaouiAbdelkamel
+/.github/ @RaouiAbdelkamel
+/scripts/ @RaouiAbdelkamel
+/security/ @RaouiAbdelkamel
+/infra/ @RaouiAbdelkamel
+/app/Dockerfile @RaouiAbdelkamel
+/app/*lock @RaouiAbdelkamel

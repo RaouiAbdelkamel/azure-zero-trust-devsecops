@@ -1,0 +1,85 @@
+name: Verify Release
+on:
+  workflow_dispatch:
+    inputs:
+      signed_run_id:
+        description: Successful Azure Publish and Sign run for this exact main commit
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+defaults:
+  run:
+    shell: bash
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      artifact_id: ${{ steps.source.outputs.artifact_id }}
+      artifact_sha: ${{ steps.source.outputs.artifact_sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ inputs.signed_run_id }}
+          ENABLED: ${{ vars.AZURE_RELEASE_ENABLED }}
+        run: |
+          test "$ENABLED" = true
+          test "$GITHUB_REF" = refs/heads/main
+          python scripts/policy.py azure
+          python scripts/release.py source "$SOURCE_RUN_ID"
+          python scripts/github-evidence.py environments
+  verify:
+    name: Independent read-only verification and promotion
+    needs: preflight
+    runs-on: [self-hosted, linux, x64, azure-private, ephemeral, verify]
+    environment: release-production
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    env:
+      CI_ROLE: verify
+      AZURE_LOGIN_POST_CLEANUP: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify original signed metadata artifact by hash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_ID: ${{ needs.preflight.outputs.artifact_id }}
+          CANDIDATE_SHA: ${{ needs.preflight.outputs.artifact_sha }}
+        run: python scripts/github-evidence.py download "$CANDIDATE_ID" "$CANDIDATE_SHA" .reports
+      - run: |
+          bash scripts/init-release-context.sh
+          python scripts/install-tools.py oras notation
+          python scripts/azure-config-env.py
+          python scripts/release.py validate-candidate .reports/release-candidate.json
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ env.AZURE_SELECTED_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TARGET_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_TARGET_SUBSCRIPTION_ID }}
+          audience: api://AzureADTokenExchange
+      - name: Verify image, signed evidence, SBOM hashes and source binding
+        run: bash scripts/promote-release.sh
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: approved-release-${{ github.sha }}
+          path: .reports/release.json
+          if-no-files-found: error
+          retention-days: 90
+      - if: always()
+        run: python -c 'import os,pathlib; pathlib.Path(os.environ["DOCKER_CONFIG"],"config.json").unlink(missing_ok=True)'

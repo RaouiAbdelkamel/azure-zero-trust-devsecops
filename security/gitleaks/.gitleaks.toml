@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Only generated environments, binaries, reports and Terraform caches"
+paths = [
+  '''(^|[/\\])(\.venv|\.ci-venv|\.tools|\.reports|reports|out|__pycache__|\.pytest_cache|\.ruff_cache|\.terraform)([/\\]|$)''',
+  '''^app[/\\]tools[/\\]'''
+]

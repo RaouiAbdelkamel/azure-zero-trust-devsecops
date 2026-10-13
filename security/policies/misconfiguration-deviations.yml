@@ -1,0 +1,13 @@
+deviations:
+  - id: AZU-0010
+    target: infra/bootstrap-state/main.tf
+    resource: azurerm_storage_account.this
+    source_sha256: sha256:f95fffa73ced23cbda81cb0cd35aff592d1a1c5366134f85a868749fd5b92206
+    owner: RaouiAbdelkamel
+    justification: >-
+      Le backend Terraform n'est consommé par aucun service Microsoft nécessitant un bypass.
+      Le contrôle recommande AzureServices ; ce projet exige explicitement bypass=None.
+    compensating_control: >-
+      Public network disabled, default network Deny, Private Endpoint et Entra uniquement.
+      Vérification du SHA-256 exact du fichier source ; tout changement exige une nouvelle revue.
+    expires: '2026-11-12'
