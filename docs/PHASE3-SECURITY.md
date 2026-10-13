@@ -13,12 +13,13 @@ Les dérogations de vulnérabilités sont vides par défaut. Toute demande exige
 - Backend Terraform : `network_rules.default_action=Deny` et `bypass=None` explicites.
 - AKS : `network_policy=cilium` explicite, cohérent avec le dataplane Cilium.
 - Scanner des couches Phase 2 : sélection explicite du binaire Gitleaks verrouillé sur Linux.
+- Base du Dockerfile : remplacement de Bookworm par Python officiel Alpine 3.24, toujours Python 3.11 et digest vérifié. Le scan réel Bookworm bloque 55 occurrences HIGH/CRITICAL ; Trixie reste bloqué. Alpine conserve son inventaire APK et dispose de wheels musllinux verrouillées pour les dépendances existantes. Les composants setuptools/pip/wheel sont retirés du runtime comme en Phase 2. La qualification complète du nouvel environnement reste obligatoire.
 
 Trivy AZU-0010 recommande un bypass AzureServices pour Storage. Ce backend ne nécessite aucun service de ce type. La déviation documentée est limitée à la ressource et au hash exact du fichier `infra/bootstrap-state/main.tf`, expire le 12 novembre 2026, et conserve endpoint privé, accès public désactivé et réseau Deny. Une modification du fichier ou l'expiration bloque à nouveau. Aucun ignore général n'est utilisé.
 
 ## D. Qualification Docker
 
-Le build multi-stage conserve l'utilisateur 10001:10001. La CI charge l'export Docker du même build et vérifie son digest de configuration contre le manifeste OCI. Elle impose rootfs en lecture seule, capabilities vides, no-new-privileges, seccomp actif, limites mémoire/CPU/PID, puis vérifie UID/GID, absence des outils de build, endpoints de santé et arrêt SIGTERM. Les couches historiques sont inspectées pour les secrets. Aucun accès au moteur Docker Windows n'est nécessaire.
+Le build multi-stage conserve l'utilisateur 10001:10001. La CI dérive un tar Docker depuis l'export OCI, vérifie les hashes des couches décompressées contre les diff IDs, le charge et vérifie son digest de configuration contre le manifeste OCI. Elle impose rootfs en lecture seule, capabilities vides, no-new-privileges, seccomp actif, limites mémoire/CPU/PID, puis vérifie UID/GID, absence des outils de build, endpoints de santé et arrêt SIGTERM. Les couches historiques sont inspectées pour les secrets. Aucun accès au moteur Docker Windows n'est nécessaire.
 
 ## E. SBOM et traçabilité
 

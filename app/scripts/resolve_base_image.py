@@ -5,7 +5,7 @@ import json
 import urllib.request
 from pathlib import Path
 
-TAG = "3.11-slim-bookworm"
+TAG = "3.11-alpine3.24"
 ROOT = Path(__file__).resolve().parents[1]
 auth_endpoint = (
     "https://auth.docker.io/token?service=registry.docker.io&scope=repository:library/python:pull"
