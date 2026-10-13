@@ -5,56 +5,139 @@
       "id": "python-official-gpg-key-public-fixture",
       "owner": "cloud-security",
       "rule": "generic-api-key",
-      "suffix": "image-config.json",
-      "lines": [1],
-      "match_sha256": "441ca669f9bf283a821e79b46de000e586c5a7b45b7988f768452a192dffc1ca",
-      "justification": "The official Docker Python image embeds the upstream public GPG verification key used to validate the Python source tarball signature. This key is public and is required for cryptographic provenance; it is not a private secret or credential.",
-      "compensating_control": "Only the exact official public key fingerprint in the image config is approved; every other secret-like finding remains blocked by the layer scan gate.",
-      "expires": "2026-11-12"
+      "justification": "Two occurrences of the same public Python source-signature verification fingerprint, in config.Env[2] and history[5].created_by. This is not a private key, credential or OCI signing/provenance attestation.",
+      "compensating_control": "Exact scan-relative path including OCI layer ordinal, rule, complete file or JSON scalar SHA-256, semantic context, allowed coordinates, unique occurrence and explicit count bound; unknown or changed occurrences fail closed.",
+      "expires": "2026-11-12",
+      "path": "image-config.json",
+      "max_occurrences": 2,
+      "occurrences": [
+        {
+          "line": 1,
+          "json_path": [
+            "config",
+            "Env",
+            2
+          ],
+          "scalar_sha256": "c7f1fc46bcecee3782515d56786fc88e7b62ba421cd5da25190f998e5b7035b8",
+          "token_start_offset": 1,
+          "token_end_offset": 50,
+          "match_sha256": "441ca669f9bf283a821e79b46de000e586c5a7b45b7988f768452a192dffc1ca"
+        },
+        {
+          "line": 1,
+          "json_path": [
+            "history",
+            5,
+            "created_by"
+          ],
+          "scalar_sha256": "df2ad7899c0ba00a615a32ec282521f138e2005ceb825ed59624d1c0ac458982",
+          "token_start_offset": 5,
+          "token_end_offset": 54,
+          "match_sha256": "441ca669f9bf283a821e79b46de000e586c5a7b45b7988f768452a192dffc1ca"
+        }
+      ]
     },
     {
       "id": "python311-msvccompiler-registry-api-symbol",
       "owner": "cloud-security",
       "rule": "generic-api-key",
-      "suffix": "usr/local/lib/python3.11/distutils/msvccompiler.py",
-      "lines": [39],
       "file_sha256": "4dae9b283df0b4606089d2e442c1f12932a106665701a69fbab64c1ef3181513",
       "justification": "This finding is the RegEnumKey Windows registry API symbol in the official Python 3.11 distutils compatibility module. It is source-code API naming, not a credential or key value.",
-      "compensating_control": "Approval is bound to the exact upstream source file hash, line, Gitleaks rule, and path; any changed file or additional finding remains blocked.",
-      "expires": "2026-11-12"
+      "compensating_control": "Exact scan-relative path including OCI layer ordinal, rule, complete file or JSON scalar SHA-256, semantic context, allowed coordinates, unique occurrence and explicit count bound; unknown or changed occurrences fail closed.",
+      "expires": "2026-11-12",
+      "path": "layer-2/usr/local/lib/python3.11/distutils/msvccompiler.py",
+      "max_occurrences": 1,
+      "occurrences": [
+        {
+          "line": 39,
+          "start_column": 10,
+          "end_column": 41,
+          "line_sha256": "1202eb90b090a005e72784277c17294b36078176283b5932057cbd14d4f7152c",
+          "match_sha256": "d07e1e4fccd455ca4ce5611dd13d9b2abcbd54ccd5354e55b16b55c3cd915dc1"
+        }
+      ]
     },
     {
       "id": "cryptography-hpke-private-key-type-annotations",
       "owner": "cloud-security",
       "rule": "generic-api-key",
-      "suffix": "cryptography/hazmat/bindings/_rust/openssl/hpke.pyi",
-      "lines": [77, 101],
       "file_sha256": "a7f8462e7e981fe11aac91755796d4b14b638a9be2100a5c4793b4b141c92ed7",
       "justification": "Both findings are the private_key parameter and X25519PrivateKey type in cryptography's public HPKE typing stub. They name API parameters and types and contain no key material.",
-      "compensating_control": "Approval is bound to the exact locked-package stub hash, listed lines, Gitleaks rule, and path; any changed file or additional finding remains blocked.",
-      "expires": "2026-11-12"
+      "compensating_control": "Exact scan-relative path including OCI layer ordinal, rule, complete file or JSON scalar SHA-256, semantic context, allowed coordinates, unique occurrence and explicit count bound; unknown or changed occurrences fail closed.",
+      "expires": "2026-11-12",
+      "path": "layer-5/opt/venv/lib/python3.11/site-packages/cryptography/hazmat/bindings/_rust/openssl/hpke.pyi",
+      "max_occurrences": 2,
+      "occurrences": [
+        {
+          "line": 77,
+          "start_column": 10,
+          "end_column": 45,
+          "line_sha256": "e448a2bc7c45cc7affc7b836022eb1ae9148eafd1cf529236ca1f8642483f2e3",
+          "match_sha256": "53ab7a83bd7b3c27cfbda8ad2bdf7dfe9c4999f89873101b7a699901e72eb2fb"
+        },
+        {
+          "line": 101,
+          "start_column": 6,
+          "end_column": 41,
+          "line_sha256": "0c3263199eef3fe3ee58fa0471061af34f2666249901a83e4f07c284de8b7e7a",
+          "match_sha256": "53ab7a83bd7b3c27cfbda8ad2bdf7dfe9c4999f89873101b7a699901e72eb2fb"
+        }
+      ]
     },
     {
       "id": "pyjwt-private-key-api-identifiers",
       "owner": "cloud-security",
       "rule": "generic-api-key",
-      "suffix": "site-packages/jwt/algorithms.py",
-      "lines": [97, 984, 1107],
       "file_sha256": "31e174916a77d17f4ed9dbcd3b869e9264a146aaf8d97f02d9b43bf828fe0441",
       "justification": "The findings are the public PyJWT algorithms module's private-key class names and key parameter/type annotations. They are Python identifiers and contain no cryptographic key bytes.",
-      "compensating_control": "Approval is bound to the exact PyJWT 2.15.1 source file hash, listed lines, Gitleaks rule, and path; any changed file or additional finding remains blocked.",
-      "expires": "2026-11-12"
+      "compensating_control": "Exact scan-relative path including OCI layer ordinal, rule, complete file or JSON scalar SHA-256, semantic context, allowed coordinates, unique occurrence and explicit count bound; unknown or changed occurrences fail closed.",
+      "expires": "2026-11-12",
+      "path": "layer-5/opt/venv/lib/python3.11/site-packages/jwt/algorithms.py",
+      "max_occurrences": 3,
+      "occurrences": [
+        {
+          "line": 97,
+          "start_column": 50,
+          "end_column": 83,
+          "line_sha256": "24c22286cd9d1d1abbb37fc79ab7fa34eba2f54db87e24b64d5a5ff5c30a5f66",
+          "match_sha256": "e6471362028c13fab0d2dcc14168d20876938be3b12a87e9a239951d7d7cd9bc"
+        },
+        {
+          "line": 984,
+          "start_column": 38,
+          "end_column": 60,
+          "line_sha256": "9331f04927b71d05c27c511994402174a74f43d699c952bf68838988e71c94e4",
+          "match_sha256": "ecbd00f1ad9819b607e050855c62aa243721753e08d69f8336ce74de44b557a2"
+        },
+        {
+          "line": 1107,
+          "start_column": 18,
+          "end_column": 48,
+          "line_sha256": "05d68f184de64d8666c5b5dc85b22573274d75a8398bd2de28108d5938b3a93b",
+          "match_sha256": "185ba9dfb10cb9991ac496f181ecd44e7e1400193aacf67a9427c9537fcdeee6"
+        }
+      ]
     },
     {
       "id": "pyjwt-metadata-documentation-token-example",
       "owner": "cloud-security",
       "rule": "jwt",
-      "suffix": "pyjwt-2.15.1.dist-info/METADATA",
-      "lines": [77],
       "file_sha256": "1ea0c9f139b8c928276b3628af165955f6f764491448a6ad8f103cdcbb382da3",
       "justification": "This is a fixed HS256 documentation/example token embedded in the public METADATA for the exactly locked PyJWT 2.15.1 distribution; its sole claim is the non-sensitive placeholder name 'some'. It is not an application or service credential.",
-      "compensating_control": "Approval is bound to the exact locked-package metadata hash, line, Gitleaks rule, and path; any changed file or additional token remains blocked.",
-      "expires": "2026-11-12"
+      "compensating_control": "Exact scan-relative path including OCI layer ordinal, rule, complete file or JSON scalar SHA-256, semantic context, allowed coordinates, unique occurrence and explicit count bound; unknown or changed occurrences fail closed.",
+      "expires": "2026-11-12",
+      "path": "layer-5/opt/venv/lib/python3.11/site-packages/pyjwt-2.15.1.dist-info/METADATA",
+      "max_occurrences": 1,
+      "occurrences": [
+        {
+          "line": 77,
+          "start_column": 6,
+          "end_column": 110,
+          "line_sha256": "07dcb86035aabc018551049dc6b3f61319077ab25fe1b7dc4c6afc82f21414f4",
+          "match_sha256": "b93cbda133b5fae9a518464fed071ad931a56884133855ac2f7dc1e6ff7ebe25"
+        }
+      ]
     }
-  ]
+  ],
+  "schema_version": 2
 }

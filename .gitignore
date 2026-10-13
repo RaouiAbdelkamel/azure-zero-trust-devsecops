@@ -16,3 +16,6 @@ out/
 .pytest_cache/
 .ruff_cache/
 .coverage*
+
+# Generated root-level validation reports; existing tracked files require explicit untracking.
+/reports/

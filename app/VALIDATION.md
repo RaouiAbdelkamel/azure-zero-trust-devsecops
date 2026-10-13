@@ -2,9 +2,9 @@
 
 Date : 13 octobre 2026. Workspace : `C:\Users\Abdelkamel\Documents\08_CARRIERE\Azure`.
 
-Ce rapport décrit la validation initiale de Phase 2. La Phase 3 exécute maintenant Docker sur GitHub Linux et remplace la base Bookworm vulnérable par Python officiel Alpine 3.24 épinglé, avec les mêmes versions Python et applicatives. Consulter le [rapport Phase 3](../docs/PHASE3-VALIDATION.md) pour les résultats actuels du build, du runtime et du scan d'image. Docker Desktop Windows n'a pas été réparé ni reconfiguré.
+Ce rapport décrit la validation initiale de Phase 2. La Phase 3 exécute maintenant Docker sur GitHub Linux et remplace la base Bookworm vulnérable par Python officiel Alpine 3.24 épinglé, avec les mêmes versions Python et applicatives. Consulter le [rapport Phase 3](../docs/PHASE3-VALIDATION.md) pour les résultats actuels du build, du runtime et du scan d'image. Le moteur est accessible lors de la revalidation locale ; cette correction ne modifie pas Docker Desktop.
 
-**L'application est implémentée et validée localement. La Phase 2 n'est pas entièrement homologuée : le build et le runtime Docker restent bloqués par une panne du moteur Docker Desktop.** Aucun résultat Docker/Azure n'est présenté comme réussi.
+**L'application et le runtime Docker sont validés localement.** Le blocage Docker décrit plus bas est historique ; la qualification GitHub du candidat courant et les intégrations Azure restent à valider.
 
 ## A. Architecture réalisée
 
@@ -93,6 +93,8 @@ Ces diagnostics génériques ne correspondent pas à des CVE détectées dans l'
 
 ## F. Limites et blocage Docker
 
+Cette section décrit l'état historique lors de la validation initiale de Phase 2. Le moteur Docker est désormais disponible ; voir la revalidation du 13 octobre 2026 ci-dessous.
+
 Python local : 3.11.9. Docker client : 29.8.1, contexte `desktop-linux`. La version du moteur n'a pas pu être interrogée.
 
 Une tentative de `docker desktop start --timeout 45` a été effectuée. Les logs locaux de Docker Desktop rapportent un échec d'initialisation du **Secrets Engine**, lors de l'accès/renommage de son socket `engine.sock` en `engine.sock.stale`. Le named pipe `dockerDesktopLinuxEngine` reste absent. Les commandes CLI en attente ont été interrompues ; aucun reset, suppression de stockage Docker, changement WSL/Windows ou déploiement Azure n'a été réalisé.
@@ -108,6 +110,12 @@ docker version
 
 Si l'OS ou l'image comporte des vulnérabilités, mettre à jour la base et ses digests, reconstruire puis relancer tous les contrôles concernés avant d'accepter la Phase 2. La collecte du SBOM et les scans Trivy de l'OS restent requis en Phase 3. La signature/provenance, l'accès privé réel à ACR et les comportements d'admission restent non validés.
 
+### Revalidation locale du conteneur — 13 octobre 2026
+
+Le moteur Docker Desktop Linux a été interrogé et a permis un build réel depuis `app/Dockerfile`. L'image locale a réussi `scripts/validate-docker-runtime.sh` : UID/GID 10001, rootfs read-only, capabilities effectives nulles, `no-new-privileges`, seccomp, vérifications JWT/RSA et CA, probes de santé et arrêt SIGTERM. Le scan Trivy image/secrets et les SBOM CycloneDX/SPDX ont également passé leurs gates.
+
+Le scan Gitleaks réel des couches a examiné neuf occurrences, toutes justifiées par des fixtures statiques attachées à des empreintes SHA-256, chemins et lignes exacts, avec expiration au 12 novembre 2026. Un test négatif d'image dérivée contenant un jeton fictif a échoué comme attendu et son rapport est resté expurgé. Ces validations locales ne remplacent pas la qualification GitHub Actions ni la provenance produite par le builder verrouillé.
+
 ## G. Préparation Phase 3
 
 Contexte `app/`, image `secure-api`, port 8080, runtime Python 3.11, version OCI 1.0.0. Les dépendances de production sont séparées des outils de tests. Les rapports sont exploitables en CI et la couverture impose un seuil.
@@ -117,3 +125,10 @@ Le pipeline futur utilisera les identités OIDC **build** et **sign** de la Phas
 Le deployment devra référencer l'image par digest, avec ServiceAccount `fastapi/fastapi`, UID/GID 10001, capacités supprimées, seccomp RuntimeDefault, racine en lecture seule, PSS Restricted et probes sur 8080. L'identité applicative de Phase 1 n'a aucun rôle de données par défaut ; un besoin précis est nécessaire avant tout accès Key Vault.
 
 L'intégration est préparée dans le code et la documentation. Aucun pipeline de production n'a été créé, conformément au périmètre demandé.
+
+
+### Durcissement Gitleaks — Phase 3B2, 14 octobre 2026
+
+Les deux contournements des exceptions sont corrigés et couverts par des tests de refus. Résultat final : 113 tests applicatifs, dont 27 tests du scanner de couches ; couverture de l’application 99,10 %. Le scanner vérifie les diff IDs des couches, les chemins complets, chaque emplacement et contexte autorisé, ainsi que les plafonds et l’unicité. Il expurge les rapports avant d’examiner les exceptions. Aucun secret synthétique ne figure dans les rapports conservés.
+
+Le conteneur local a de nouveau passé le runtime durci, Trivy et les SBOM ; ses fichiers Python correspondent aux sources courantes. Le build précédent reste applicable puisque ses entrées sont inchangées. Le [rapport Phase 3B2](../docs/PHASE3B2-VALIDATION.md) précise les preuves, limites et contrôles GitHub encore attendus. Aucun déploiement Azure ni publication automatique.
