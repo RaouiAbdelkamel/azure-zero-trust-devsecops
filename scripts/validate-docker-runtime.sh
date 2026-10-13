@@ -14,7 +14,9 @@ docker run -d --name "$name" --read-only --cap-drop ALL \
   --pids-limit 128 --memory 512m --cpus 1 -e APP_ENV=test \
   -p 127.0.0.1::8080 "$image" >/dev/null
 docker exec -i "$name" python - <<'PY'
-import importlib.util, os, pathlib, shutil
+import importlib.util, os, pathlib, shutil, ssl
+import jwt
+from cryptography.hazmat.primitives.asymmetric import rsa
 assert os.getuid() == 10001 and os.getgid() == 10001 and 0 not in os.getgroups()
 assert not any(shutil.which(name) for name in ('gcc', 'cc', 'g++', 'make'))
 assert all(importlib.util.find_spec(name) is None for name in ('pytest', 'bandit', 'pip'))
@@ -22,6 +24,18 @@ assert not list(pathlib.Path('/app').rglob('.env*'))
 fields = dict(line.split(':', 1) for line in pathlib.Path('/proc/self/status').read_text().splitlines() if ':' in line)
 assert int(fields['CapEff'].strip(), 16) == 0
 assert fields['NoNewPrivs'].strip() == '1' and fields['Seccomp'].strip() == '2'
+# Exercise native musl crypto wheels and CA availability in the actual runtime.
+# Ephemeral in-memory test key/token; never printed or saved as credentials.
+key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+token = jwt.encode({'aud': 'runtime-fixture', 'iss': 'runtime-fixture'}, key, algorithm='RS256')
+assert jwt.decode(token, key.public_key(), algorithms=['RS256'], audience='runtime-fixture', issuer='runtime-fixture')['aud'] == 'runtime-fixture'
+try:
+    jwt.decode(token, key.public_key(), algorithms=['RS256'], audience='rejected-fixture', issuer='runtime-fixture')
+except jwt.InvalidAudienceError:
+    pass
+else:
+    raise AssertionError('Native JWT audience validation bypass')
+assert pathlib.Path(ssl.get_default_verify_paths().cafile).is_file()
 try:
     pathlib.Path('/app/write-probe').write_text('probe')
 except OSError:

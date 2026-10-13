@@ -149,5 +149,12 @@
     }
   },
   "buildx_version": "v0.38.0",
-  "buildkit_image": "moby/buildkit@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea"
+  "buildkit_image": "moby/buildkit@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea",
+  "gitleaks_rules": {
+    "source": "https://raw.githubusercontent.com/gitleaks/gitleaks/83d9cd684c87d95d656c1458ef04895a7f1cbd8e/config/gitleaks.toml",
+    "source_sha256": "e163e53b9e7e8a8511e77271e2b323ed057759542a6d988258afe3a1fa329caf",
+    "path": "security/gitleaks/layers.gitleaks.toml",
+    "sha256": "be04d7136dacfd77f569838e3b7c02cee9a77f37658629378b68d567ada8429f",
+    "change": "Remove global file/path exclusions for historical layer scans"
+  }
 }

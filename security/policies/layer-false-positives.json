@@ -1,0 +1,16 @@
+{
+  "max_duration_days": 30,
+  "reviews": [
+    {
+      "id": "python-official-gpg-key-public-fixture",
+      "owner": "cloud-security",
+      "rule": "generic-api-key",
+      "suffix": "image-config.json",
+      "lines": [1],
+      "match_sha256": "441ca669f9bf283a821e79b46de000e586c5a7b45b7988f768452a192dffc1ca",
+      "justification": "The official Docker Python image embeds the upstream public GPG verification key used to validate the Python source tarball signature. This key is public and is required for cryptographic provenance; it is not a private secret or credential.",
+      "compensating_control": "Only the exact official public key fingerprint in the image config is approved; every other secret-like finding remains blocked by the layer scan gate.",
+      "expires": "2026-11-12"
+    }
+  ]
+}

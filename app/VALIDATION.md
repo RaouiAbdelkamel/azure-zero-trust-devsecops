@@ -2,6 +2,8 @@
 
 Date : 13 octobre 2026. Workspace : `C:\Users\Abdelkamel\Documents\08_CARRIERE\Azure`.
 
+Ce rapport décrit la validation initiale de Phase 2. La Phase 3 exécute maintenant Docker sur GitHub Linux et remplace la base Bookworm vulnérable par Python officiel Alpine 3.24 épinglé, avec les mêmes versions Python et applicatives. Consulter le [rapport Phase 3](../docs/PHASE3-VALIDATION.md) pour les résultats actuels du build, du runtime et du scan d'image. Docker Desktop Windows n'a pas été réparé ni reconfiguré.
+
 **L'application est implémentée et validée localement. La Phase 2 n'est pas entièrement homologuée : le build et le runtime Docker restent bloqués par une panne du moteur Docker Desktop.** Aucun résultat Docker/Azure n'est présenté comme réussi.
 
 ## A. Architecture réalisée

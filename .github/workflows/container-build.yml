@@ -62,7 +62,9 @@ jobs:
           .tools/bin/trivy image --scanners vuln,secret --image-config-scanners secret \
             --format json --output .reports/trivy-image.json secure-fastapi:ci
           python scripts/policy.py trivy .reports/trivy-image.json
-          python app/scripts/scan_image_layers.py --image secure-fastapi:ci --scanner .tools/bin/gitleaks
+          python app/scripts/scan_image_layers.py --image secure-fastapi:ci --scanner .tools/bin/gitleaks \
+            --config security/gitleaks/layers.gitleaks.toml --report .reports/gitleaks-layers.json \
+            --finding-policy security/policies/layer-false-positives.json
       - name: Generate mandatory SBOMs and seal evidence
         run: |
           bash scripts/generate-sbom.sh out
