@@ -1,5 +1,5 @@
 # Digest réel résolu depuis Docker Hub et SHA-256 du manifest vérifié ; base-image.json.
-FROM python:3.11-alpine3.24@sha256:d9368b3a5ac59afea7b5d4f2e2aea0941dbf9fdee9c369c5bec00b98244bc929 AS builder
+FROM python:3.14-alpine3.24@sha256:f6a589d43c42b9e7f7dc67a12d37132491f362859a5d750607710cc56da3bc72 AS builder
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1
 WORKDIR /build
 COPY requirements.lock ./
@@ -7,7 +7,7 @@ COPY requirements.lock ./
 RUN python -m venv --without-pip /opt/venv \
     && python -m pip --python /opt/venv install --require-hashes --only-binary=:all: -r requirements.lock
 
-FROM python:3.11-alpine3.24@sha256:d9368b3a5ac59afea7b5d4f2e2aea0941dbf9fdee9c369c5bec00b98244bc929 AS runtime
+FROM python:3.14-alpine3.24@sha256:f6a589d43c42b9e7f7dc67a12d37132491f362859a5d750607710cc56da3bc72 AS runtime
 LABEL org.opencontainers.image.title="secure-api" \
       org.opencontainers.image.version="1.0.0" \
       org.opencontainers.image.description="Azure Zero Trust FastAPI reference service"
